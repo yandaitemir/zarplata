@@ -1,0 +1,1600 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Разбор расчётного листка</title>
+<meta name="description" content="Калькулятор проверки правильности начисления заработной платы работникам бюджетной сферы. Нормы 2022-2026 гг., пресет по Республике Тыва. Адвокат Яндай-оол Т.В.">
+<meta name="author" content="Адвокат Яндай-оол Темир Вячеславович">
+<style>
+/* базовый сброс — в опубликованном артефакте его добавляет оболочка страницы */
+:root{color-scheme:light dark}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#fafaf9}
+img{max-width:100%;height:auto}
+[hidden]{display:none!important}
+</style>
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef2f6;
+  --ink:#14202c; --muted:#5c6b7a; --line:#d9e0e7; --line-soft:#e8edf2;
+  --accent:#1d4e73; --accent-soft:#e3edf5;
+  --ok:#16785a; --ok-bg:#e4f2ec;
+  --warn:#9a6510; --warn-bg:#faefdd;
+  --bad:#a92d24; --bad-bg:#fbe8e6;
+  --shadow:0 1px 2px rgba(20,32,44,.06), 0 6px 20px -12px rgba(20,32,44,.24);
+  --sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono","Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f151b; --surface:#161e26; --surface-2:#1b242d;
+    --ink:#e4ebf1; --muted:#93a3b2; --line:#253039; --line-soft:#1f2831;
+    --accent:#74a9d8; --accent-soft:#1a2937;
+    --ok:#4fbb98; --ok-bg:#122a24;
+    --warn:#d79f43; --warn-bg:#2c2416;
+    --bad:#e8776c; --bad-bg:#2e1a19;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 22px -14px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#161e26; --surface-2:#1b242d;
+  --ink:#e4ebf1; --muted:#93a3b2; --line:#253039; --line-soft:#1f2831;
+  --accent:#74a9d8; --accent-soft:#1a2937;
+  --ok:#4fbb98; --ok-bg:#122a24;
+  --warn:#d79f43; --warn-bg:#2c2416;
+  --bad:#e8776c; --bad-bg:#2e1a19;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 22px -14px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1220px;margin:0 auto;padding:28px 20px 64px}
+
+/* ---------- header ---------- */
+header.top{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:2px solid var(--ink)}
+.brand h1{font-size:clamp(24px,3.4vw,34px);line-height:1.1;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
+.brand p{margin:0;color:var(--muted);max-width:62ch;font-size:14.5px}
+.stamp{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:6px 10px;white-space:nowrap}
+
+/* ---------- quick check ---------- */
+.quick{max-width:760px}
+.quick .grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.quick input,.quick select{font-size:16px;padding:11px 12px}
+.verdict{margin-top:24px;border:1px solid var(--line);border-left-width:4px;border-radius:6px;background:var(--surface);padding:20px 22px;box-shadow:var(--shadow)}
+.verdict.ok{border-left-color:var(--ok)}
+.verdict.bad{border-left-color:var(--bad)}
+.verdict.warn{border-left-color:var(--warn)}
+.verdict .lead{font-size:19px;font-weight:600;letter-spacing:-.015em;margin:0 0 4px;text-wrap:balance}
+.verdict.ok .lead{color:var(--ok)}
+.verdict.bad .lead{color:var(--bad)}
+.verdict.warn .lead{color:var(--warn)}
+.verdict .sum{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:28px;font-weight:600;margin:10px 0 2px;color:var(--ink)}
+.verdict p{margin:8px 0 0;font-size:14px;color:var(--muted);line-height:1.55}
+.verdict p b{color:var(--ink);font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.vrows{margin:16px 0 0;border-top:1px solid var(--line-soft)}
+.vrow{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px dashed var(--line-soft);font-size:13.5px}
+.vrow span:first-child{color:var(--muted)}
+.vrow span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.gotofull{margin-top:18px}
+.gotofull button{appearance:none;font:inherit;font-weight:500;font-size:14px;cursor:pointer;background:var(--accent);color:#fff;border:none;border-radius:5px;padding:11px 18px}
+:root[data-theme="dark"] .gotofull button{color:#0f151b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .gotofull button{color:#0f151b}}
+.gotofull button:hover{filter:brightness(1.08)}
+.gotofull button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.exclude{margin-top:16px;padding:14px 16px;border:1px dashed var(--line);border-radius:5px;background:var(--surface-2)}
+.exclude b{display:block;font-size:13px;margin-bottom:6px}
+.exclude ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted);columns:2;column-gap:26px}
+@media (max-width:560px){.exclude ul{columns:1}}
+.exclude li{margin-bottom:3px;break-inside:avoid}
+
+/* ---------- notice ---------- */
+.notice{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0;margin:20px 0 0;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.notice > div{padding:13px 16px;border-right:1px solid var(--line-soft)}
+.notice > div:last-child{border-right:none}
+@media (max-width:720px){.notice > div{border-right:none;border-bottom:1px solid var(--line-soft)}.notice > div:last-child{border-bottom:none}}
+.notice b{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.notice p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.notice .date-val{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- footer ---------- */
+footer.author{margin-top:44px;padding-top:24px;border-top:2px solid var(--ink)}
+.card-author{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px}
+.card-author .nm{font-size:16px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+.card-author .reg{font-size:13px;color:var(--muted);margin:0 0 12px}
+.card-author .reg b{font-family:var(--mono);color:var(--ink);font-weight:600}
+.card-author .links{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13.5px}
+.card-author .links span{display:flex;gap:7px;align-items:baseline}
+.card-author .links em{font-style:normal;color:var(--muted);font-size:12.5px}
+.card-author a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)}
+.card-author a:hover{border-bottom-color:var(--accent)}
+.card-author a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.acts{margin-top:14px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+details.acts > summary{cursor:pointer;padding:13px 20px;font-size:13.5px;font-weight:500;list-style:none}
+details.acts > summary::-webkit-details-marker{display:none}
+details.acts > summary::before{content:"▸ ";color:var(--accent);font-size:11px}
+details.acts[open] > summary::before{content:"▾ "}
+details.acts > summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.acts-body{padding:2px 20px 18px;border-top:1px solid var(--line-soft)}
+.acts-body h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:16px 0 6px;font-weight:600}
+.acts-body ul{margin:0;padding-left:17px;font-size:13px;color:var(--muted)}
+.acts-body li{margin-bottom:4px}
+.acts-body li b{color:var(--ink);font-weight:500}
+
+/* ---------- tabs ---------- */
+nav.tabs{display:flex;flex-wrap:wrap;gap:2px;margin:0 0 22px;border-bottom:1px solid var(--line)}
+nav.tabs button{appearance:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:12px 16px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* ---------- layout ---------- */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:26px;align-items:start}
+@media (max-width:960px){.cols{grid-template-columns:1fr}}
+.panel[hidden]{display:none}
+
+/* ---------- form ---------- */
+fieldset{border:none;border-top:1px solid var(--line);margin:0 0 4px;padding:18px 0 20px}
+fieldset:first-of-type{border-top:none;padding-top:4px}
+legend{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;padding:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 16px;margin-top:14px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f.wide{grid-column:1/-1}
+label{font-size:13px;color:var(--muted);font-weight:500}
+label .hint{display:block;font-size:11.5px;color:var(--muted);opacity:.85;font-weight:400;margin-top:2px}
+input,select{width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:9px 10px;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+select{font-family:var(--sans)}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+input[readonly]{background:var(--surface-2);color:var(--muted);cursor:not-allowed}
+.row-inline{display:flex;gap:10px;align-items:center}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:var(--ink);cursor:pointer}
+.chk input{width:auto;margin-top:2px}
+.note{font-size:12.5px;color:var(--muted);margin:10px 0 0;padding-left:11px;border-left:2px solid var(--line)}
+
+/* ---------- ledger ---------- */
+.ledger{position:sticky;top:16px;background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);overflow:hidden}
+@media (max-width:960px){.ledger{position:static}}
+.ledger-head{padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.ledger-head h2{margin:0;font-size:15px;letter-spacing:-.01em}
+.ledger-head span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.lines{padding:6px 18px 12px}
+.line{display:flex;justify-content:space-between;gap:14px;padding:6px 0;font-size:13.5px;border-bottom:1px dashed var(--line-soft)}
+.line:last-child{border-bottom:none}
+.line .nm{color:var(--muted);min-width:0}
+.line .vl{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500}
+.line.sub .nm{padding-left:12px;font-size:12.5px}
+.line.total{border-top:1px solid var(--ink);border-bottom:none;margin-top:6px;padding-top:10px;font-size:15px}
+.line.total .nm{color:var(--ink);font-weight:600}
+.line.total .vl{font-weight:600;font-size:16px}
+.line.grand .vl{color:var(--accent);font-size:20px;font-weight:600}
+.line.neg .vl{color:var(--bad)}
+
+/* ---------- diff ---------- */
+.diff{margin:0;padding:14px 18px;border-top:1px solid var(--line);background:var(--surface-2);font-size:13.5px}
+.diff strong{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.diff.ok{color:var(--ok)} .diff.bad{color:var(--bad)}
+
+/* ---------- checks ---------- */
+.checks{margin-top:26px;display:grid;gap:10px}
+.checks h2{font-size:17px;margin:0 0 2px;letter-spacing:-.01em}
+.check{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 12px;border:1px solid var(--line);border-left-width:3px;border-radius:5px;padding:12px 14px;background:var(--surface)}
+.check.ok{border-left-color:var(--ok)}
+.check.warn{border-left-color:var(--warn)}
+.check.bad{border-left-color:var(--bad)}
+.pill{grid-row:1/3;align-self:start;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:3px;font-weight:600;white-space:nowrap;margin-top:1px}
+.check.ok .pill{background:var(--ok-bg);color:var(--ok)}
+.check.warn .pill{background:var(--warn-bg);color:var(--warn)}
+.check.bad .pill{background:var(--bad-bg);color:var(--bad)}
+.check .t{font-weight:600;font-size:14px}
+.check .d{font-size:13px;color:var(--muted);margin-top:3px}
+.check .d b{font-family:var(--mono);color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.check .law{display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--accent);background:var(--accent-soft);padding:3px 6px;border-radius:3px}
+
+/* ---------- reference tab ---------- */
+.ref{display:grid;gap:26px;max-width:900px}
+.ref h2{font-size:19px;margin:0 0 10px;letter-spacing:-.015em}
+.ref h3{font-size:14px;margin:20px 0 6px;color:var(--accent)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:5px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-soft)}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);font-weight:600}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:last-child td{border-bottom:none}
+.ref ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.ref li{margin-bottom:6px}
+.ref li b{color:var(--ink)}
+.disclaimer{margin-top:30px;padding:14px 16px;border:1px dashed var(--line);border-radius:5px;font-size:13px;color:var(--muted);background:var(--surface)}
+h2.sec{font-size:19px;margin:0 0 14px;letter-spacing:-.015em}
+.mono-small{font-family:var(--mono);font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.check,.line{transition:background .15s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <h1>Разбор расчётного листка</h1>
+    <p>Пересчитывает зарплату работника бюджетной сферы по нормам ТК РФ и показывает, где начисление расходится с законом. Данные 2026 года.</p>
+  </div>
+  <div class="stamp">МРОТ 27 093 ₽ · 2026</div>
+</header>
+
+<section class="notice">
+  <div>
+    <b>Данные остаются у вас</b>
+    <p>Расчёт выполняется в вашем браузере. Введённые данные никуда не передаются и нигде не сохраняются.</p>
+  </div>
+  <div>
+    <b>Результат ориентировочный</b>
+    <p>Результат ориентировочный и не является юридической консультацией. Точная сумма определяется по расчётным листкам, положению об оплате труда и обстоятельствам конкретного дела.</p>
+  </div>
+  <div>
+    <b>Актуальность данных</b>
+    <p>Данные актуальны на <span class="date-val">7 сентября 2026 года</span>. МРОТ меняется ежегодно, региональное соглашение действует по 31.12.2026 — после этих дат расчёт нужно сверять заново.</p>
+  </div>
+</section>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="quick">Быстрая проверка</button>
+  <button role="tab" aria-selected="false" data-tab="salary">Зарплата за месяц</button>
+  <button role="tab" aria-selected="false" data-tab="vacation">Отпускные</button>
+  <button role="tab" aria-selected="false" data-tab="sick">Больничный</button>
+  <button role="tab" aria-selected="false" data-tab="ref">Нормативы</button>
+</nav>
+
+<!-- ============ БЫСТРАЯ ПРОВЕРКА ============ -->
+<section class="panel" id="p-quick">
+<div class="quick">
+  <h2 class="sec">Четыре поля — и ответ, дотягивает ли зарплата до минимума</h2>
+  <form id="fQuick" autocomplete="off">
+    <fieldset>
+      <legend>Данные из расчётного листка</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="qYear">За какой год считаем</label>
+          <select id="qYear"></select>
+        </div>
+        <div class="f">
+          <label for="qRegion">Где вы работаете</label>
+          <select id="qRegion"></select>
+        </div>
+        <div class="f">
+          <label for="qSev">Ваша северная надбавка<span class="hint">Смотрите в листке отдельной строкой</span></label>
+          <select id="qSev"></select>
+        </div>
+        <div class="f">
+          <label for="qSum">Начислено, ₽<span class="hint">Без выплат из списка ниже</span></label>
+          <input type="number" id="qSum" value="27000" min="0" step="100">
+        </div>
+        <div class="f wide">
+          <label class="chk"><input type="checkbox" id="qFull" checked> Месяц отработан <b>полностью</b>, на полную ставку, без больничных и отпуска</label>
+        </div>
+      </div>
+
+      <div class="exclude">
+        <b>В сумму НЕ включайте:</b>
+        <ul>
+          <li>районный коэффициент</li>
+          <li>северную надбавку</li>
+          <li>оплату сверхурочных</li>
+          <li>доплату за ночные часы</li>
+          <li>оплату выходных и праздников</li>
+          <li>доплату за совмещение</li>
+          <li>классное руководство и проверку тетрадей</li>
+          <li>отпускные и больничные</li>
+        </ul>
+      </div>
+    </fieldset>
+  </form>
+
+  <div class="verdict" id="qVerdict"></div>
+
+  <div class="gotofull">
+    <button type="button" id="qToFull">Открыть подробный расчёт</button>
+  </div>
+</div>
+</section>
+
+<!-- ============ ЗАРПЛАТА ============ -->
+<section class="panel" id="p-salary" hidden>
+<div class="cols">
+  <form id="fSalary" autocomplete="off">
+
+    <fieldset>
+      <legend>Кто и за какой месяц</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="branch">Категория работника</label>
+          <select id="branch">
+            <option value="ped">Педагогический работник</option>
+            <option value="med">Медицинский работник</option>
+            <option value="other">Культура, соцсфера, прочие</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="month">Месяц</label>
+          <select id="month"></select>
+        </div>
+        <div class="f">
+          <label for="year">Год и действовавший МРОТ<span class="hint">Для перерасчёта за прошлые периоды</span></label>
+          <select id="year"></select>
+        </div>
+        <div class="f">
+          <label for="week">Рабочая неделя<span class="hint">Для расчёта часовой ставки</span></label>
+          <select id="week">
+            <option value="40">40 часов</option>
+            <option value="39">39 часов (врачи)</option>
+            <option value="36" selected>36 часов (педагоги, ряд медиков)</option>
+            <option value="33">33 часа</option>
+            <option value="30">30 часов</option>
+            <option value="24">24 часа</option>
+          </select>
+        </div>
+      </div>
+      <p class="note" id="normNote"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Оклад и нагрузка</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="oklad" id="okladLbl">Ставка заработной платы, ₽<span class="hint">Оклад за полную норму часов</span></label>
+          <input type="number" id="oklad" value="14500" min="0" step="1">
+        </div>
+        <div class="f" id="wrapNormaSt">
+          <label for="normaSt">Норма часов за ставку<span class="hint">Приказ Минобрнауки № 1601</span></label>
+          <select id="normaSt">
+            <option value="18">18 ч/нед — учитель, педагог доп. образования</option>
+            <option value="20">20 ч/нед — учитель-логопед</option>
+            <option value="24">24 ч/нед — музыкальный руководитель</option>
+            <option value="25">25 ч/нед — воспитатель групп компенсирующей направленности</option>
+            <option value="30">30 ч/нед — инструктор по физкультуре, старший воспитатель</option>
+            <option value="36">36 ч/нед — воспитатель ДОУ, педагог-психолог</option>
+          </select>
+        </div>
+        <div class="f" id="wrapLoad">
+          <label for="load">Фактическая нагрузка, ч/нед</label>
+          <input type="number" id="load" value="24" min="0" step="0.5">
+        </div>
+        <div class="f" id="wrapDaysFact" hidden>
+          <label for="daysFact">Отработано дней в месяце</label>
+          <input type="number" id="daysFact" value="22" min="0" step="1">
+        </div>
+        <div class="f" id="wrapRate" hidden>
+          <label for="rateVol">Объём занимаемой ставки<span class="hint">1,0 — полная; 0,5 — половина</span></label>
+          <input type="number" id="rateVol" value="1" min="0" step="0.05">
+        </div>
+      </div>
+      <p class="note" id="loadNote"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Компенсационные выплаты</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="harm">За вредные / особые условия, % оклада</label>
+          <input type="number" id="harm" value="0" min="0" step="1">
+        </div>
+        <div class="f ped-only">
+          <label for="tetr">За проверку письменных работ, % оклада<span class="hint">Считается не более чем за норму нагрузки</span></label>
+          <input type="number" id="tetr" value="15" min="0" step="1">
+        </div>
+        <div class="f ped-only">
+          <label for="klass">Классное руководство, ₽<span class="hint">Федеральная выплата + региональная</span></label>
+          <input type="number" id="klass" value="5000" min="0" step="100">
+        </div>
+        <div class="f">
+          <label for="compOther">Иные компенсационные, ₽</label>
+          <input type="number" id="compOther" value="0" min="0" step="100">
+        </div>
+        <div class="f wide ped-only">
+          <label class="chk"><input type="checkbox" id="outsideDuties" checked>
+            Классное руководство и проверка работ выполняются <b>с письменного согласия</b> и не входят в основные должностные обязанности по квалификационной характеристике</label>
+          <span class="hint" style="padding-left:26px">Тогда по Постановлению КС РФ от 23.09.2024 № 40-П эти доплаты в МРОТ не засчитываются. Второе самостоятельное основание — учебная работа сверх нормы часов</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Стимулирующие выплаты</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="qual">За квалификационную категорию, % оклада</label>
+          <input type="number" id="qual" value="20" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="stazh">За стаж / выслугу, % оклада</label>
+          <input type="number" id="stazh" value="10" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="premia">Премия, интенсивность, качество, ₽</label>
+          <input type="number" id="premia" value="3000" min="0" step="100">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Работа сверх нормы · в МРОТ не входит</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="ovrH">Сверхурочные часы за месяц</label>
+          <input type="number" id="ovrH" value="0" min="0" step="0.5">
+        </div>
+        <div class="f">
+          <label for="nightH">Часы работы ночью (22:00–06:00)</label>
+          <input type="number" id="nightH" value="0" min="0" step="0.5">
+        </div>
+        <div class="f">
+          <label for="nightP">Ночные, % часовой ставки<span class="hint">Минимум по закону — 20 %</span></label>
+          <input type="number" id="nightP" value="20" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="holH">Часы в выходные и праздники</label>
+          <input type="number" id="holH" value="0" min="0" step="0.5">
+        </div>
+        <div class="f">
+          <label for="holMode">Праздничные часы отработаны</label>
+          <select id="holMode">
+            <option value="in">в пределах месячной нормы</option>
+            <option value="over">сверх месячной нормы</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="sovm">Доплата за совмещение / расширение зон, ₽</label>
+          <input type="number" id="sovm" value="0" min="0" step="100">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Территория и региональные гарантии</legend>
+      <div class="grid">
+        <div class="f wide">
+          <label for="region">Территория<span class="hint">Пресет подставит районный коэффициент и рассчитает надбавку по стажу</span></label>
+          <select id="region"></select>
+        </div>
+        <div class="f" id="wrapNorthMonths" hidden>
+          <label for="northMonths">Стаж работы в местности, полных месяцев</label>
+          <input type="number" id="northMonths" value="60" min="0" step="1">
+        </div>
+        <div class="f" id="wrapNorthYouth" hidden>
+          <label for="northMode">Порядок начисления надбавки<span class="hint">Ст. 7 Закона РТ № 1054 ВХ-I</span></label>
+          <select id="northMode">
+            <option value="normal">обычный</option>
+            <option value="youth1">до 30 лет, прожил в местности не менее года</option>
+            <option value="full5">до 30 лет, прожил в местности не менее пяти лет</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="rk">Районный коэффициент<span class="hint">1,0 — если не установлен</span></label>
+          <input type="number" id="rk" value="1" min="1" step="0.01">
+        </div>
+        <div class="f">
+          <label for="sev">Северная надбавка, %</label>
+          <input type="number" id="sev" value="0" min="0" step="10">
+        </div>
+        <div class="f">
+          <label for="highAlt">Коэффициент за высокогорье, %<span class="hint">Монгун-Тайга — 15 % по ПП РТ № 492</span></label>
+          <input type="number" id="highAlt" value="0" min="0" step="1">
+        </div>
+        <div class="f wide" id="wrapFedBudget" hidden>
+          <label class="chk"><input type="checkbox" id="fedBudget"> Работодатель финансируется из <b>федерального</b> бюджета</label>
+          <span class="hint" style="padding-left:26px">Тогда региональное соглашение о минимальной зарплате не применяется — п. 5.2. Коэффициент и надбавка при этом сохраняются по федеральному закону</span>
+        </div>
+        <div class="f">
+          <label for="highMode">Как применяется высокогорный</label>
+          <select id="highMode">
+            <option value="add">дополнительно к районному коэффициенту</option>
+            <option value="max">вместо районного, если он больше</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="mrotReg">Применимый МРОТ, ₽<span class="hint">Региональный, если он выше федерального</span></label>
+          <input type="number" id="mrotReg" value="27093" min="0" step="1">
+        </div>
+      </div>
+      <p class="note" id="regionNote">Территория не выбрана — коэффициент и надбавку задайте вручную.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Удержания</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="kids12">Детей: первый и второй</label>
+          <input type="number" id="kids12" value="0" min="0" max="2" step="1">
+        </div>
+        <div class="f">
+          <label for="kids3">Детей: третий и последующие</label>
+          <input type="number" id="kids3" value="0" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="kidsInv">Детей-инвалидов</label>
+          <input type="number" id="kidsInv" value="0" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="ytd">Доход с начала года, ₽<span class="hint">Без учёта этого месяца</span></label>
+          <input type="number" id="ytd" value="0" min="0" step="1000">
+        </div>
+        <div class="f">
+          <label for="uderzh">Прочие удержания, ₽<span class="hint">Алименты, профвзнос, исполнительный лист</span></label>
+          <input type="number" id="uderzh" value="0" min="0" step="100">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Сверка с вашим листком</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="factNach">Фактически начислено, ₽<span class="hint">0 — не сверять</span></label>
+          <input type="number" id="factNach" value="0" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="factPay">Фактически к выплате, ₽</label>
+          <input type="number" id="factPay" value="0" min="0" step="1">
+        </div>
+      </div>
+    </fieldset>
+  </form>
+
+  <aside>
+    <div class="ledger">
+      <div class="ledger-head">
+        <span>Расчёт по закону</span>
+        <h2 id="ledgerTitle">Начисления за месяц</h2>
+      </div>
+      <div class="lines" id="salaryLines"></div>
+      <div class="diff" id="salaryDiff" hidden></div>
+    </div>
+    <div class="checks" id="salaryChecks"></div>
+  </aside>
+</div>
+</section>
+
+<!-- ============ ОТПУСКНЫЕ ============ -->
+<section class="panel" id="p-vacation" hidden>
+<div class="cols">
+  <form id="fVac" autocomplete="off">
+    <fieldset>
+      <legend>Расчётный период — 12 месяцев перед отпуском</legend>
+      <div class="grid">
+        <div class="f wide">
+          <label for="vBase">Заработок за 12 месяцев, ₽<span class="hint">Все выплаты по системе оплаты труда. Без отпускных, больничных и матпомощи</span></label>
+          <input type="number" id="vBase" value="720000" min="0" step="1000">
+        </div>
+        <div class="f">
+          <label for="vFull">Полностью отработанных месяцев</label>
+          <input type="number" id="vFull" value="11" min="0" max="12" step="1">
+        </div>
+        <div class="f">
+          <label for="vPartCal">Календарных дней в неполном месяце</label>
+          <input type="number" id="vPartCal" value="30" min="0" max="31" step="1">
+        </div>
+        <div class="f">
+          <label for="vPartWorked">Из них отработано, календарных дней<span class="hint">Дни болезни и отпуска исключаются</span></label>
+          <input type="number" id="vPartWorked" value="16" min="0" max="31" step="1">
+        </div>
+        <div class="f">
+          <label for="vDays">Дней отпуска</label>
+          <input type="number" id="vDays" value="56" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="vRk">Районный коэффициент<span class="hint">Если он уже в заработке — оставьте 1,0</span></label>
+          <input type="number" id="vRk" value="1" min="1" step="0.01">
+        </div>
+        <div class="f">
+          <label for="vFact">Фактически начислено отпускных, ₽<span class="hint">0 — не сверять</span></label>
+          <input type="number" id="vFact" value="0" min="0" step="1">
+        </div>
+      </div>
+      <p class="note">Учителям положено 56 календарных дней, воспитателям ДОУ — 42, большинству остальных бюджетников — 28 плюс дополнительные дни за вредность или северную местность.</p>
+    </fieldset>
+  </form>
+  <aside>
+    <div class="ledger">
+      <div class="ledger-head"><span>Статья 139 ТК РФ · Положение № 922</span><h2>Отпускные</h2></div>
+      <div class="lines" id="vacLines"></div>
+      <div class="diff" id="vacDiff" hidden></div>
+    </div>
+    <div class="checks" id="vacChecks"></div>
+  </aside>
+</div>
+</section>
+
+<!-- ============ БОЛЬНИЧНЫЙ ============ -->
+<section class="panel" id="p-sick" hidden>
+<div class="cols">
+  <form id="fSick" autocomplete="off">
+    <fieldset>
+      <legend>Заработок за два предшествующих года</legend>
+      <div class="grid">
+        <div class="f">
+          <label for="s24">Заработок за 2024 год, ₽<span class="hint">Предельная база — 2 225 000 ₽</span></label>
+          <input type="number" id="s24" value="480000" min="0" step="1000">
+        </div>
+        <div class="f">
+          <label for="s25">Заработок за 2025 год, ₽<span class="hint">Предельная база — 2 759 000 ₽</span></label>
+          <input type="number" id="s25" value="540000" min="0" step="1000">
+        </div>
+        <div class="f">
+          <label for="sStazh">Страховой стаж</label>
+          <select id="sStazh">
+            <option value="1">8 лет и более — 100 %</option>
+            <option value="0.8">от 5 до 8 лет — 80 %</option>
+            <option value="0.6">до 5 лет — 60 %</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="sDays">Дней нетрудоспособности</label>
+          <input type="number" id="sDays" value="10" min="0" step="1">
+        </div>
+        <div class="f">
+          <label for="sRk">Районный коэффициент<span class="hint">Применяется только к расчёту из МРОТ</span></label>
+          <input type="number" id="sRk" value="1" min="1" step="0.01">
+        </div>
+        <div class="f">
+          <label for="sFact">Фактически начислено пособие, ₽<span class="hint">0 — не сверять</span></label>
+          <input type="number" id="sFact" value="0" min="0" step="1">
+        </div>
+      </div>
+      <p class="note">Первые три дня болезни оплачивает работодатель, остальные — Социальный фонд. НДФЛ удерживается со всей суммы пособия.</p>
+    </fieldset>
+  </form>
+  <aside>
+    <div class="ledger">
+      <div class="ledger-head"><span>Закон № 255-ФЗ</span><h2>Пособие по нетрудоспособности</h2></div>
+      <div class="lines" id="sickLines"></div>
+      <div class="diff" id="sickDiff" hidden></div>
+    </div>
+    <div class="checks" id="sickChecks"></div>
+  </aside>
+</div>
+</section>
+
+<!-- ============ НОРМАТИВЫ ============ -->
+<section class="panel" id="p-ref" hidden>
+<div class="ref">
+  <div>
+    <h2>Что калькулятор проверяет и на чём это основано</h2>
+    <h3>Минимальный размер оплаты труда</h3>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">МРОТ с 1 января 2026 года — <b style="color:var(--ink);font-family:var(--mono)">27 093 ₽</b> (Федеральный закон от 28.11.2025 № 429-ФЗ). Зарплата за полностью отработанную норму не может быть ниже. При неполной ставке гарантия уменьшается пропорционально.</p>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">Конституционный Суд четырежды указывал, что в МРОТ <b style="color:var(--ink)">нельзя засчитывать</b>:</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Акт</th><th>Что исключено из МРОТ</th></tr></thead>
+        <tbody>
+          <tr><td>№ 38-П от 07.12.2017</td><td>районный коэффициент и процентная надбавка за работу в особых климатических условиях</td></tr>
+          <tr><td>№ 17-П от 11.04.2019</td><td>повышенная оплата сверхурочной работы, ночного времени, выходных и праздников</td></tr>
+          <tr><td>№ 40-П от 16.12.2019</td><td>доплата за совмещение профессий и должностей</td></tr>
+          <tr><td>№ 40-П от 23.09.2024</td><td>доплата педагогу за работу вне основных должностных обязанностей и за учебные часы сверх нормы</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Общая логика всех четырёх: МРОТ — плата за нормальную работу в нормальных условиях. Всё, что сверх нормы или сверх обычных условий, оплачивается отдельно и поверх минимума.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Две оговорки, важные при ссылках. <b style="color:var(--ink)">Постановлений № 40-П два</b> — от 16.12.2019 и от 23.09.2024, ссылаться нужно с датой. И ни в одном случае нормы ТК не признаны неконституционными: Суд выявлял их конституционно-правовой смысл, а истолкование стало общеобязательным. Формулировка «КС отменил норму» неточна.</p>
+  </div>
+
+  <div>
+    <h3>Постановление КС РФ от 23.09.2024 № 40-П — дело учительницы Е. Н. Харюшевой</h3>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">Самый адресный акт по учительским зарплатам. Доплата не засчитывается в МРОТ при совокупности условий:</p>
+    <ul>
+      <li>работа выполнена <b>с письменного согласия</b> работника;</li>
+      <li>работа <b>не входит в основные должностные обязанности</b> по квалификационной характеристике замещаемой должности;</li>
+      <li>отдельным основанием — учебная работа <b>сверх установленной нормы часов</b>.</li>
+    </ul>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Производство в части ст. 133.1 ТК РФ прекращено, поэтому применительно к <b style="color:var(--ink)">региональной</b> минимальной зарплате на это постановление ссылаться нельзя.</p>
+  </div>
+
+  <div>
+    <h3>МРОТ по годам</h3>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Период</th><th class="num">МРОТ</th><th class="num">Минимум в Кызыле (× 1,9)</th></tr></thead>
+        <tbody>
+          <tr><td>с 01.01.2026</td><td class="num">27 093 ₽</td><td class="num">51 476,70 ₽</td></tr>
+          <tr><td>с 01.01.2025</td><td class="num">22 440 ₽</td><td class="num">42 636,00 ₽</td></tr>
+          <tr><td>с 01.01.2024</td><td class="num">19 242 ₽</td><td class="num">36 559,80 ₽</td></tr>
+          <tr><td>с 01.01.2023</td><td class="num">16 242 ₽</td><td class="num">30 859,80 ₽</td></tr>
+          <tr><td>с 01.06.2022</td><td class="num">15 279 ₽</td><td class="num">29 030,10 ₽</td></tr>
+          <tr><td>с 01.01.2022</td><td class="num">13 890 ₽</td><td class="num">26 391,00 ₽</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mono-small" style="margin-top:8px">Столбец справа — при надбавке, достигшей предела 50 %. У работника с меньшим стажем множитель ниже, считать нужно по фактическому стажу.</p>
+  </div>
+
+  <div>
+    <h3>Работа сверх нормы</h3>
+    <ul>
+      <li><b>Сверхурочные (ст. 152 ТК РФ).</b> С 1 сентября 2024 года по Федеральному закону от 22.04.2024 № 91-ФЗ считаются от зарплаты <b>с учётом всех компенсационных и стимулирующих выплат</b>, а не от голого оклада. Первые два часа — не менее полуторного размера, дальше — не менее двойного.</li>
+      <li><b>Ночные (ст. 154 ТК РФ).</b> Не менее 20 % часовой ставки за каждый час — постановление Правительства РФ от 22.07.2008 № 554. Отраслевые соглашения часто устанавливают больше.</li>
+      <li><b>Выходные и праздники (ст. 153 ТК РФ).</b> Не менее двойной ставки; если работа в пределах месячной нормы — сверх оклада доплачивается одинарная ставка. По постановлению КС РФ № 26-П от 28.06.2018 в расчёт входят компенсационные и стимулирующие выплаты.</li>
+      <li><b>Совмещение (ст. 60.2 и 151 ТК РФ).</b> Размер доплаты — по письменному соглашению сторон, но она не поглощает МРОТ.</li>
+    </ul>
+  </div>
+
+  <div>
+    <h3>Норма рабочего времени в 2026 году</h3>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Месяц</th><th class="num">Рабочих дней</th><th class="num">40 ч/нед</th><th class="num">36 ч/нед</th><th class="num">39 ч/нед</th></tr></thead>
+        <tbody id="normTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <h3>Нормы часов педагогической работы за ставку</h3>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Должность</th><th class="num">Норма за ставку</th></tr></thead>
+        <tbody>
+          <tr><td>Учитель 1–11 классов, педагог дополнительного образования</td><td class="num">18 ч/нед</td></tr>
+          <tr><td>Учитель-логопед</td><td class="num">20 ч/нед</td></tr>
+          <tr><td>Музыкальный руководитель, концертмейстер</td><td class="num">24 ч/нед</td></tr>
+          <tr><td>Воспитатель групп компенсирующей направленности</td><td class="num">25 ч/нед</td></tr>
+          <tr><td>Инструктор по физкультуре, старший воспитатель</td><td class="num">30 ч/нед</td></tr>
+          <tr><td>Воспитатель ДОУ, педагог-психолог, социальный педагог</td><td class="num">36 ч/нед</td></tr>
+          <tr><td>Преподаватель СПО</td><td class="num">720 ч/год</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mono-small" style="margin-top:8px">Приказ Минобрнауки России от 22.12.2014 № 1601</p>
+  </div>
+
+  <div>
+    <h3>Налог и вычеты в 2026 году</h3>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Годовой доход</th><th class="num">Ставка НДФЛ</th></tr></thead>
+        <tbody>
+          <tr><td>до 2 400 000 ₽</td><td class="num">13 %</td></tr>
+          <tr><td>2 400 000 – 5 000 000 ₽</td><td class="num">15 %</td></tr>
+          <tr><td>5 000 000 – 20 000 000 ₽</td><td class="num">18 %</td></tr>
+          <tr><td>20 000 000 – 50 000 000 ₽</td><td class="num">20 %</td></tr>
+          <tr><td>свыше 50 000 000 ₽</td><td class="num">22 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Повышенная ставка применяется только к превышению порога. Вычеты на детей: 1 400 ₽ на первого, 2 800 ₽ на второго, 6 000 ₽ на третьего и последующих, 12 000 ₽ на ребёнка-инвалида. Вычет действует, пока доход с начала года не превысил 450 000 ₽.</p>
+  </div>
+
+  <div>
+    <h2>Республика Тыва</h2>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">Территория республики разделена на две категории — постановление Правительства РФ от 16.11.2021 № 1946, действующий перечень. Районные коэффициенты — постановление Правительства РФ от 18.07.1994 № 856.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Территория</th><th>Категория</th><th class="num">Коэф.</th><th class="num">Предел надбавки</th><th class="num">Множитель</th><th class="num">Минимум 2026</th></tr></thead>
+        <tbody>
+          <tr><td>Монгун-Тайгинский и Тоджинский районы, сумон Шынаанский Тере-Хольского района</td><td>район Крайнего Севера</td><td class="num">1,5</td><td class="num">80 %</td><td class="num">2,3</td><td class="num">62 313,90 ₽</td></tr>
+          <tr><td>Кызыл, Ак-Довурак и все остальные районы, включая Тере-Хольский без сумона Шынаанский</td><td>приравненная местность</td><td class="num">1,4</td><td class="num">50 %</td><td class="num">1,9</td><td class="num">51 476,70 ₽</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Множитель получается <b style="color:var(--ink)">сложением</b>, а не перемножением: коэффициент и надбавка начисляются на один и тот же заработок. Для Кызыла это 1 + 0,4 + 0,5 = 1,9.</p>
+    <h3>Как растёт процентная надбавка</h3>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">Размеры прописаны прямо в ст. 7 Закона Республики Тыва от 29.12.2004 № 1054 ВХ-I, и адресована она «работникам предприятий, учреждений и организаций» — то есть любому работодателю, а не только бюджетному.</p>
+    <ul>
+      <li><b>Приравненные местности (Кызыл и большинство районов):</b> 10 % за каждый год работы, не свыше <b>50 %</b>. Предел набирается за 5 лет.</li>
+      <li><b>Районы Крайнего Севера (Монгун-Тайга, Тоджа, сумон Шынаанский):</b> 10 % по истечении первых шести месяцев, +10 % за каждые следующие полгода до 60 %, дальше +10 % за каждый год, не свыше <b>80 %</b>.</li>
+      <li><b>Молодёжь до 30 лет, прожившая в местности не менее года:</b> в приравненных местностях +10 % за каждые 6 месяцев; на Крайнем Севере — <b>по 20 %</b> за каждые 6 месяцев до 60 %, дальше по 20 % за год.</li>
+      <li><b>Молодёжь до 30 лет, прожившая в местности не менее пяти лет:</b> надбавка выплачивается <b>в полном размере с первого дня работы</b>. Для местного выпускника, устроившегося в родном кожууне, это сразу 50 или 80 процентов.</li>
+      <li>Стаж <b>суммируется</b> по всем работодателям в северных и приравненных местностях независимо от перерывов в работе.</li>
+    </ul>
+    <h3>Коэффициент за работу в высокогорных районах</h3>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">Постановление Правительства РТ от 20.09.2021 № 492 называет для <b style="color:var(--ink)">Монгун-Тайгинского кожууна</b> надбавку за работу в высокогорных местностях — <b style="color:var(--ink)">15 %</b>. В формуле расчёта доплаты за классное руководство она стоит <b style="color:var(--ink)">рядом</b> с северной надбавкой, а не вместо неё: для Крайнего Севера там 80 процентов, «а также» 15 процентов за высокогорье. То есть выплаты складываются, и для Монгун-Тайги множитель получается 1 + 0,5 + 0,8 + 0,15 = <b style="color:var(--ink)">2,45</b>, а минимум 2026 года — <b style="color:var(--ink)">66 377,85 ₽</b>.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Входит ли надбавка в базу сравнения с МРОТ, решается по той же логике, что и остальные компенсационные: как выплата за <b style="color:var(--ink)">особые климатические условия</b> она в минимум попадать не должна и начисляется поверх него. Прямого разъяснения Конституционного Суда именно по высокогорным надбавкам нет — вывод строится по аналогии с постановлением № 38-П.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Есть и второе подтверждение, независимое от № 492. Приказ Министерства юстиции Республики Тыва от 21.01.2025 № 8 в перечне выплат компенсационного характера называет их через запятую: «районный коэффициент и процентная надбавка за стаж работы в районах Крайнего Севера и приравненных к ним местностях, <b style="color:var(--ink)">надбавка за высокогорность и безводность</b>». Отдельная строка в составе компенсационных — значит, отдельная выплата.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Оговорка о сфере действия: № 492 регулирует систему оплаты труда <b style="color:var(--ink)">государственных</b> образовательных организаций республики, а сама формула относится к доплате за классное руководство. Для работника <b style="color:var(--ink)">муниципальной</b> школы нужен акт органа местного самоуправления и положение об оплате труда его учреждения.</p>
+
+    <h3>Ключевая проверка для Тувы</h3>
+    <p style="margin:6px 0;font-size:13.5px;color:var(--muted)">Пункт 1.1 регионального соглашения о минимальной заработной плате от 26.12.2023 определяет минимум как федеральный МРОТ, <b style="color:var(--ink)">увеличенный на районный коэффициент и процентную надбавку</b>. То есть 27 093 ₽ — это база, к которой коэффициент и надбавка прибавляются <b style="color:var(--ink)">сверху</b>, а не потолок, внутрь которого их можно спрятать. Позиция Конституционного Суда здесь не толкование, а прямой текст действующего республиканского документа — доказывание существенно проще.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Типичная спорная ситуация выглядит так: работнику начисляют 27 093 ₽ «с учётом северных». В Кызыле расчётная разница составляет около <b style="color:var(--ink)">24 384 ₽</b> в месяц.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><b style="color:var(--ink)">Пункт 1.4 — условие гарантии.</b> Минимум причитается, если работник полностью отработал за месяц норму рабочего времени и выполнил нормы труда. При неполной ставке или неполном месяце гарантия уменьшается пропорционально.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><b style="color:var(--ink)">Пункт 5.2 — на кого распространяется.</b> На все организации и на индивидуальных предпринимателей, ведущих деятельность в республике, <b style="color:var(--ink)">кроме финансируемых из федерального бюджета</b>. Работникам федеральных учреждений коэффициент и надбавка причитаются по ст. 315–317 ТК РФ и Закону РТ № 1054 ВХ-I, но ссылаться на соглашение нельзя.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><b style="color:var(--ink)">Пункты 4.1.1–4.1.4 — присоединение автоматическое.</b> Работодатель, не подавший мотивированный письменный отказ в Министерство труда и социальной политики РТ в течение <b style="color:var(--ink)">30 календарных дней</b> со дня официального опубликования предложения, считается присоединившимся. К отказу прилагаются протокол консультаций с профсоюзом и предложения по срокам повышения зарплаты, а копии отказов Минтруд направляет в Государственную инспекцию труда.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><b style="color:var(--ink)">Пункт 5.1 — срок действия с 01.01.2024 по 31.12.2026.</b> Формула не новая: та же конструкция «МРОТ, увеличенный на районный коэффициент и процентную надбавку» действует в республике <b style="color:var(--ink)">с 1 января 2021 года</b>, предыдущими соглашениями. До 2021 года минимальная зарплата устанавливалась фиксированной суммой <b style="color:var(--ink)">без учёта</b> коэффициента и надбавок — при расчётах за более ранние периоды это разные конструкции.</p>
+    <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)">Право на коэффициент и надбавку сверх минимума после 31.12.2026 сохраняется независимо от соглашения: оно держится на ст. 315–317 ТК РФ и Законе РФ № 4520-1, а Постановление № 38-П лишь дало общеобязательное истолкование о том, что эти выплаты в минимум не входят. Ст. 133.1 ТК РФ прямо предусматривает применение федерального МРОТ при отсутствии региональной минималки.</p>
+    <p class="mono-small" style="margin-top:8px">Постановление КС РФ № 38-П от 07.12.2017 · ст. 133.1, 315–317 ТК РФ · Закон РФ от 19.02.1993 № 4520-1 · Закон РТ от 29.12.2004 № 1054 ВХ-I</p>
+  </div>
+
+  <div class="disclaimer">
+    Калькулятор считает по общим нормам Трудового кодекса и федеральным гарантиям. Конкретные размеры окладов, компенсационных и стимулирующих выплат устанавливаются региональными нормативными актами, отраслевыми соглашениями и положением об оплате труда вашего учреждения — их нужно смотреть отдельно. Расхождение с расчётным листком не всегда означает нарушение: сначала запросите у работодателя расчёт и положение об оплате труда. Это не юридическая консультация.
+  </div>
+</div>
+</section>
+
+<footer class="author">
+  <div class="card-author">
+    <p class="nm">Адвокат Яндай-оол Темир Вячеславович</p>
+    <p class="reg">Регистрационный номер <b>17/298</b> в реестре адвокатов Республики Тыва. Форма адвокатского образования — адвокатский кабинет.</p>
+    <p class="reg">Пользование калькулятором и переписка по нему не создают отношений по оказанию юридической помощи. Юридическая помощь оказывается на основании соглашения.</p>
+    <div class="links">
+      <span><em>Разборы судебной практики</em> <a href="https://t.me/yandaitemir" target="_blank" rel="noopener">t.me/yandaitemir</a></span>
+      <span><em>Вопросы</em> <a href="mailto:yandaitemir@yandex.ru">yandaitemir@yandex.ru</a></span>
+    </div>
+  </div>
+
+  <details class="acts">
+    <summary>Нормативные акты, на которых построен расчёт</summary>
+    <div class="acts-body">
+      <h4>Трудовой кодекс РФ</h4>
+      <ul>
+        <li><b>ст. 129, 133, 133.1</b> — состав заработной платы, МРОТ, региональная минимальная зарплата</li>
+        <li><b>ст. 60.2 и 151</b> — совмещение и расширение зон обслуживания</li>
+        <li><b>ст. 99, 152</b> — сверхурочная работа и её оплата</li>
+        <li><b>ст. 153, 154</b> — работа в выходные и праздники, работа в ночное время</li>
+        <li><b>ст. 138</b> — предельный размер удержаний</li>
+        <li><b>ст. 139</b> — исчисление среднего заработка</li>
+        <li><b>ст. 62, 136, 236</b> — выдача документов, сроки выплат, компенсация за задержку</li>
+        <li><b>ст. 314–317</b> — стаж, районный коэффициент и процентная надбавка</li>
+        <li><b>ст. 334</b> — удлинённый отпуск педагогических работников</li>
+        <li><b>ст. 392</b> — сроки обращения в суд за разрешением трудового спора</li>
+      </ul>
+
+      <h4>Постановления Конституционного Суда РФ</h4>
+      <ul>
+        <li><b>от 07.12.2017 № 38-П</b> — районный коэффициент и процентная надбавка не входят в МРОТ</li>
+        <li><b>от 28.06.2018 № 26-П</b> — оплата работы в выходные с учётом компенсационных и стимулирующих выплат</li>
+        <li><b>от 11.04.2019 № 17-П</b> — сверхурочные, ночные, выходные и праздники не входят в МРОТ</li>
+        <li><b>от 16.12.2019 № 40-П</b> — доплата за совмещение не входит в МРОТ</li>
+        <li><b>от 23.09.2024 № 40-П</b> — доплата педагогу за работу вне основных обязанностей и за часы сверх нормы не входит в МРОТ</li>
+      </ul>
+
+      <h4>Федеральные законы и подзаконные акты</h4>
+      <ul>
+        <li><b>Федеральный закон от 28.11.2025 № 429-ФЗ</b> — МРОТ с 1 января 2026 года</li>
+        <li><b>Федеральный закон от 22.04.2024 № 91-ФЗ</b> — новая редакция ч. 1 ст. 152 ТК РФ</li>
+        <li><b>Федеральный закон от 29.12.2006 № 255-ФЗ</b> — пособия по временной нетрудоспособности</li>
+        <li><b>Закон РФ от 19.02.1993 № 4520-1</b> — гарантии и компенсации для работающих на Севере</li>
+        <li><b>Налоговый кодекс РФ, ст. 218 и 224</b> — вычеты на детей и ставки НДФЛ</li>
+        <li><b>Постановление Правительства РФ от 16.11.2021 № 1946</b> — перечень районов Крайнего Севера и приравненных местностей</li>
+        <li><b>Постановление Правительства РФ от 18.07.1994 № 856</b> — районные коэффициенты в Республике Тыва</li>
+        <li><b>Постановление Правительства РФ от 24.12.2007 № 922</b> — порядок исчисления среднего заработка</li>
+        <li><b>Постановление Правительства РФ от 22.07.2008 № 554</b> — минимальный размер доплаты за работу ночью</li>
+        <li><b>Приказ Минобрнауки России от 22.12.2014 № 1601</b> — нормы часов педагогической работы за ставку</li>
+      </ul>
+
+      <h4>Республика Тыва</h4>
+      <ul>
+        <li><b>Закон Республики Тыва от 29.12.2004 № 1054 ВХ-I</b>, ст. 6 и 7 — районный коэффициент и размеры процентной надбавки, включая льготный порядок для молодёжи</li>
+        <li><b>Региональное соглашение о минимальной заработной плате в Республике Тыва</b>, заключено в г. Кызыле 26.12.2023 — п. 1.1, 1.4, 4.1.1, 5.1, 5.2</li>
+        <li><b>Закон Республики Тыва от 22.11.2005 № 1419 ВХ-1</b> — о социальном партнёрстве, основание для заключения соглашения</li>
+      </ul>
+
+      <h4>Отраслевые системы оплаты труда Республики Тыва</h4>
+      <ul>
+        <li><b>Постановление Правительства РТ от 20.09.2021 № 492</b> (ред. от 28.11.2023) — государственные образовательные организации. Оттуда взяты: правило о начислении доплаты за проверку письменных работ не более чем за норму нагрузки, минимум 20 % за ночные часы, формула доплаты за классное руководство с высокогорной надбавкой Монгун-Тайгинского кожууна</li>
+        <li><b>Постановление Правительства РТ от 28.09.2015 № 463</b> (ред. от 21.06.2018) — учреждения культуры и искусства. П. 62: коэффициент и надбавка начисляются на оклады, компенсационные <b>и стимулирующие</b> выплаты</li>
+        <li><b>Постановление Правительства РТ от 07.07.2016 № 292</b> (ред. от 29.05.2024) — организации социального обслуживания. П. 8.2 — та же конструкция начисления</li>
+        <li><b>Постановление Правительства РТ от 13.03.2019 № 116</b> (ред. от 26.11.2025) — учреждения, подведомственные Министерству строительства РТ</li>
+        <li><b>Постановление Правительства РТ от 27.06.2007 № 705</b> — работники государственных органов республики, не замещающие должности гражданской службы</li>
+        <li><b>Приказ Министерства юстиции РТ от 21.01.2025 № 8</b> (ред. от 24.08.2026) — называет <b>надбавку за высокогорность и безводность</b> самостоятельной компенсационной выплатой наряду с коэффициентом и северной надбавкой</li>
+      </ul>
+
+      <h4>Контекст правоприменения</h4>
+      <ul>
+        <li><b>Распоряжение Правительства РТ от 27.03.2025 № 165-р</b> — межведомственная рабочая группа по правильности начисления и выплаты заработной платы работникам бюджетной сферы республики</li>
+        <li><b>Постановление Правительства РТ от 13.04.2018 № 182</b> — методика расчёта нормативов расходов на обеспечение деятельности органов местного самоуправления. Определяет, как формируются фонды оплаты труда на муниципальном уровне</li>
+      </ul>
+
+      <p style="margin:16px 0 0;font-size:12.5px;color:var(--muted)">Оклады, проценты за квалификационную категорию и за дополнительные виды работ устанавливаются положением об оплате труда конкретного учреждения. Для муниципальных школ и детских садов это акт органа местного самоуправления, а не постановление правительства республики.</p>
+    </div>
+  </details>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ---------- данные 2026 ---------- */
+const MROT = 27093;
+const MROT_YEARS = [
+  {v:27093, t:"2026 год — 27 093 ₽"},
+  {v:22440, t:"2025 год — 22 440 ₽"},
+  {v:19242, t:"2024 год — 19 242 ₽"},
+  {v:16242, t:"2023 год — 16 242 ₽"},
+  {v:15279, t:"2022 год с 01.06 — 15 279 ₽"},
+  {v:13890, t:"2022 год до 01.06 — 13 890 ₽"}
+];
+const MONTHS = [
+  {n:"Январь",     d:15, h40:120, pre:0},
+  {n:"Февраль",    d:19, h40:152, pre:0},
+  {n:"Март",       d:21, h40:168, pre:0},
+  {n:"Апрель",     d:22, h40:175, pre:1},
+  {n:"Май",        d:19, h40:151, pre:1},
+  {n:"Июнь",       d:21, h40:167, pre:1},
+  {n:"Июль",       d:23, h40:184, pre:0},
+  {n:"Август",     d:21, h40:168, pre:0},
+  {n:"Сентябрь",   d:22, h40:176, pre:0},
+  {n:"Октябрь",    d:22, h40:176, pre:0},
+  {n:"Ноябрь",     d:20, h40:159, pre:1},
+  {n:"Декабрь",    d:22, h40:176, pre:0}
+];
+const NDFL = [[2400000,.13],[5000000,.15],[20000000,.18],[50000000,.20],[Infinity,.22]];
+const BASE24 = 2225000, BASE25 = 2759000;
+const SICK_MAX_DAY = (BASE24 + BASE25) / 730;
+const SICK_MIN_DAY = MROT * 24 / 730;
+
+const normHours = (mi, week) => Math.round(((week / 5) * MONTHS[mi].d - MONTHS[mi].pre) * 10) / 10;
+
+/* Республика Тыва. Классификация — ПП РФ от 16.11.2021 № 1946 (действует с 01.01.2022).
+   Районные коэффициенты — ПП РФ от 18.07.1994 № 856.
+   Предельная надбавка: районы Крайнего Севера (II группа) — 80 %, приравненные местности — 50 %. */
+const TYVA = [
+  {ks:true,  rk:1.5, cap:80, list:["Монгун-Тайгинский район", "Тоджинский район",
+                                   "Тере-Хольский район — сумон Шынаанский"]},
+  {ks:false, rk:1.4, cap:50, list:["город Кызыл", "город Ак-Довурак", "Бай-Тайгинский район",
+                                   "Барун-Хемчикский район", "Дзун-Хемчикский район", "Каа-Хемский район",
+                                   "Кызылский район", "Овюрский район", "Пий-Хемский район",
+                                   "Сут-Хольский район", "Тандинский район", "Тере-Хольский район (кроме сумона Шынаанский)",
+                                   "Тес-Хемский район", "Улуг-Хемский район", "Чаа-Хольский район",
+                                   "Чеди-Хольский район", "Эрзинский район"]}
+];
+
+/* Коэффициент за работу в высокогорных районах — самостоятельная выплата,
+   Постановление Правительства РТ от 20.09.2021 № 492. */
+const HIGH_ALT = {"Монгун-Тайгинский район": 15};
+
+/* Порядок начисления процентной надбавки — ст. 7 Закона РТ от 29.12.2004 № 1054 ВХ-I.
+   Крайний Север: +10 % за каждые 6 мес. до 60 %, далее +10 % за год, не свыше 80 %.
+   Приравненные местности: +10 % за каждый год, не свыше 50 %.
+   Молодёжь до 30 лет, прожившая в местности не менее года: на Крайнем Севере +20 % за
+   каждые 6 мес. до 60 %, далее +20 % за год; в приравненных +10 % за каждые 6 мес.
+   Молодёжь до 30 лет, прожившая не менее 5 лет: полный размер с первого дня работы. */
+function northPct(months, mode, isKS){
+  const cap = isKS ? 80 : 50;
+  if (mode === "full5") return cap;
+  if (mode === "youth1"){
+    if (!isKS) return Math.min(cap, Math.floor(months / 6) * 10);
+    return months < 18
+      ? Math.floor(months / 6) * 20
+      : Math.min(cap, 60 + Math.floor((months - 18) / 12) * 20);
+  }
+  if (isKS) return months < 36
+    ? Math.floor(months / 6) * 10
+    : Math.min(cap, 60 + Math.floor((months - 36) / 12) * 10);
+  return Math.min(cap, Math.floor(months / 12) * 10);
+}
+const NORTH_MODE_TXT = {
+  normal: "обычный порядок",
+  youth1: "льготный порядок для молодёжи, прожившей в местности не менее года",
+  full5:  "полный размер с первого дня — молодёжи, прожившей в местности не менее пяти лет"
+};
+
+/* ---------- утилиты ---------- */
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
+const money = v => (Math.round(v * 100) / 100).toLocaleString("ru-RU", {minimumFractionDigits:2, maximumFractionDigits:2}) + " ₽";
+const hrs = v => (Math.round(v * 10) / 10).toLocaleString("ru-RU") + " ч";
+
+function line(host, name, val, cls){
+  const d = document.createElement("div");
+  d.className = "line" + (cls ? " " + cls : "");
+  const a = document.createElement("span"); a.className = "nm"; a.textContent = name;
+  const b = document.createElement("span"); b.className = "vl"; b.textContent = typeof val === "number" ? money(val) : val;
+  d.append(a, b); host.append(d);
+}
+function check(host, status, title, desc, law){
+  const d = document.createElement("div");
+  d.className = "check " + status;
+  const p = document.createElement("span"); p.className = "pill";
+  p.textContent = status === "ok" ? "норма" : status === "warn" ? "проверить" : "нарушение";
+  const t = document.createElement("div"); t.className = "t"; t.textContent = title;
+  const x = document.createElement("div"); x.className = "d"; x.innerHTML = desc;
+  d.append(p, t, x);
+  if (law){ const l = document.createElement("span"); l.className = "law"; l.textContent = law; x.append(document.createElement("br"), l); }
+  host.append(d);
+}
+function ndfl(base){
+  let tax = 0, prev = 0;
+  for (const [cap, rate] of NDFL){
+    if (base <= prev) break;
+    tax += (Math.min(base, cap) - prev) * rate;
+    prev = cap;
+  }
+  return tax;
+}
+
+/* ---------- вкладки ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll(".panel").forEach(p => p.hidden = p.id !== "p-" + b.dataset.tab);
+  });
+});
+
+/* ---------- инициализация ---------- */
+MONTHS.forEach((m, i) => {
+  const o = document.createElement("option"); o.value = i; o.textContent = m.n; $("month").append(o);
+});
+$("month").value = 8;
+
+/* ---------- пресеты территорий ---------- */
+const regSel = $("region");
+regSel.append(new Option("Ввести вручную", "manual"));
+TYVA.forEach((grp, gi) => {
+  const g = document.createElement("optgroup");
+  g.label = `Республика Тыва · ${grp.ks ? "районы Крайнего Севера" : "приравненные местности"} · коэффициент ${String(grp.rk).replace(".", ",")}`;
+  grp.list.forEach(nm => g.append(new Option(nm, gi + "|" + nm)));
+  regSel.append(g);
+});
+regSel.value = "1|город Кызыл";
+
+/* ---------- МРОТ по годам ---------- */
+MROT_YEARS.forEach(y => $("year").append(new Option(y.t, y.v)));
+
+function applyRegion(){
+  const v = regSel.value, isTyva = v !== "manual";
+  $("wrapNorthMonths").hidden = !isTyva;
+  $("wrapNorthYouth").hidden = !isTyva;
+  $("wrapFedBudget").hidden = !isTyva;
+  $("rk").readOnly = isTyva;
+  $("sev").readOnly = isTyva;
+  if (!isTyva){
+    $("regionNote").textContent = "Территория не выбрана — коэффициент и надбавку задайте вручную.";
+    return null;
+  }
+  const [gi, nm] = v.split("|");
+  const grp = TYVA[+gi];
+  const months = num("northMonths"), mode = $("northMode").value;
+  const pct = northPct(months, mode, grp.ks);
+  $("rk").value = grp.rk;
+  $("sev").value = pct;
+  const hi = num("highAlt"), hiAdd = $("highMode").value === "add";
+  const mrotY = num("mrotReg");
+  const guar = mrotY * (1 + (grp.rk - 1) + pct / 100 + (hiAdd ? hi / 100 : 0));
+  $("regionNote").textContent =
+    `${nm} — ${grp.ks ? "район Крайнего Севера" : "местность, приравненная к районам Крайнего Севера"}. ` +
+    `Коэффициент ${String(grp.rk).replace(".", ",")}, надбавка ${pct} % при стаже ${months} мес. ` +
+    `(${NORTH_MODE_TXT[mode]}, предел ${grp.cap} %)` +
+    (hi > 0 && hiAdd ? `, плюс ${hi} % за высокогорье` : "") +
+    `. Минимум за полную норму — ${money(guar)}.`;
+  return grp;
+}
+
+const normTbl = $("normTable");
+MONTHS.forEach((m, i) => {
+  const tr = document.createElement("tr");
+  [m.n, m.d, m.h40, normHours(i,36), normHours(i,39)].forEach((v, k) => {
+    const td = document.createElement("td");
+    if (k) td.className = "num";
+    td.textContent = typeof v === "number" ? v.toLocaleString("ru-RU") : v;
+    tr.append(td);
+  });
+  normTbl.append(tr);
+});
+
+/* ---------- быстрая проверка ---------- */
+MROT_YEARS.forEach(y => $("qYear").append(new Option(y.t, y.v)));
+$("qRegion").append(new Option("За пределами Республики Тыва", "out"));
+TYVA.forEach((grp, gi) => {
+  const g = document.createElement("optgroup");
+  g.label = grp.ks ? "Районы Крайнего Севера" : "Приравненные местности";
+  grp.list.forEach(nm => g.append(new Option(nm, gi + "|" + nm)));
+  $("qRegion").append(g);
+});
+$("qRegion").value = "1|город Кызыл";
+for (let p = 0; p <= 80; p += 10) $("qSev").append(new Option(p === 0 ? "надбавки нет" : p + " %", p));
+$("qSev").value = 50;
+
+function calcQuick(){
+  const mrot = +$("qYear").value, sum = num("qSum"), full = $("qFull").checked;
+  const rv = $("qRegion").value, sev = +$("qSev").value;
+  const inTyva = rv !== "out";
+  const grp = inTyva ? TYVA[+rv.split("|")[0]] : null;
+  const rk = grp ? grp.rk : 1;
+  const hi = inTyva && HIGH_ALT[rv.split("|")[1]] ? HIGH_ALT[rv.split("|")[1]] : 0;
+
+  const diff = sum - mrot;
+  const V = $("qVerdict");
+  V.textContent = "";
+
+  const add = (cls, html) => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; V.append(d); return d; };
+
+  if (!full){
+    V.className = "verdict warn";
+    add("", `<p class="lead">Быстрая проверка здесь не сработает</p>`);
+    add("", `<p>Минимум гарантирован за <b>полностью отработанную</b> норму. При неполной ставке, больничном или отпуске он уменьшается пропорционально, и считать нужно по фактически отработанному времени — это в подробном расчёте.</p>`);
+  } else if (diff >= 0){
+    V.className = "verdict ok";
+    add("", `<p class="lead">Минимум соблюдён</p>`);
+    add("", `<div class="sum">+ ${money(diff)}</div>`);
+    add("", `<p>Начислено <b>${money(sum)}</b> при минимуме <b>${money(mrot)}</b>. Это та часть зарплаты, которая сравнивается с МРОТ.</p>`);
+  } else {
+    V.className = "verdict bad";
+    add("", `<p class="lead">Есть расхождение с минимумом</p>`);
+    add("", `<div class="sum">− ${money(-diff)}</div>`);
+    add("", `<p>Начислено <b>${money(sum)}</b>, а сравнивать нужно с <b>${money(mrot)}</b>. Проверьте, есть ли в листке строка «доплата до МРОТ» — если её нет, это повод запросить у работодателя расчёт и положение об оплате труда.</p>`);
+  }
+
+  if (full && inTyva){
+    const mult = 1 + (rk - 1) + sev / 100 + hi / 100;
+    const total = mrot * mult;
+    const rows = document.createElement("div");
+    rows.className = "vrows";
+    const row = (a, b) => {
+      const d = document.createElement("div"); d.className = "vrow";
+      const x = document.createElement("span"); x.textContent = a;
+      const y = document.createElement("span"); y.textContent = b;
+      d.append(x, y); rows.append(d);
+    };
+    row("Минимум для сравнения", money(mrot));
+    row(`Районный коэффициент ${String(rk).replace(".", ",")}`, "+ " + money(mrot * (rk - 1)));
+    if (sev) row(`Северная надбавка ${sev} %`, "+ " + money(mrot * sev / 100));
+    if (hi) row(`Надбавка за высокогорье ${hi} %`, "+ " + money(mrot * hi / 100));
+    row("Итого на руки до вычета налога не меньше", money(total));
+    V.append(rows);
+    const p = document.createElement("p");
+    p.innerHTML = `Коэффициент и надбавка начисляются <b style="font-family:var(--sans)">сверх</b> минимума, а не входят в него. Множители складываются: 1 + ${(rk - 1).toFixed(2).replace(".", ",")} + ${(sev / 100).toFixed(2).replace(".", ",")}${hi ? " + " + (hi / 100).toFixed(2).replace(".", ",") : ""} = <b>${mult.toFixed(2).replace(".", ",")}</b>.`;
+    V.append(p);
+  }
+}
+
+$("fQuick").addEventListener("input", calcQuick);
+$("fQuick").addEventListener("change", calcQuick);
+$("qToFull").addEventListener("click", () => {
+  document.querySelector('nav.tabs button[data-tab="salary"]').click();
+  window.scrollTo({top: 0, behavior: "smooth"});
+});
+
+/* ---------- расчёт зарплаты ---------- */
+function calcSalary(){
+  const tyvaGrp = applyRegion();
+  const isTyva = !!tyvaGrp;
+  const branch = $("branch").value;
+  const isPed = branch === "ped";
+  document.querySelectorAll(".ped-only").forEach(e => e.hidden = !isPed);
+  $("wrapNormaSt").hidden = !isPed;
+  $("wrapLoad").hidden = !isPed;
+  $("wrapDaysFact").hidden = isPed;
+  $("wrapRate").hidden = isPed;
+  $("okladLbl").firstChild.textContent = isPed ? "Ставка заработной платы, ₽" : "Оклад по должности, ₽";
+
+  const mi = +$("month").value, week = +$("week").value;
+  const mon = MONTHS[mi], nh = normHours(mi, week);
+  $("normNote").textContent = `${mon.n} 2026: ${mon.d} рабочих дней, норма ${hrs(nh)} при ${week}-часовой неделе.`;
+
+  const oklad = num("oklad");
+
+  // доля отработанного времени
+  let share, shareText;
+  if (isPed){
+    const ns = +$("normaSt").value, ld = num("load");
+    share = ns > 0 ? ld / ns : 0;
+    shareText = `Нагрузка ${ld} ч/нед при норме ${ns} ч — это ${share.toFixed(3).replace(/0+$/,"").replace(/\.$/,"")} ставки.`;
+  } else {
+    const df = num("daysFact"), rv = num("rateVol");
+    share = mon.d > 0 ? (df / mon.d) * rv : 0;
+    shareText = `Отработано ${df} из ${mon.d} дней при ставке ${rv} — это ${(share).toFixed(3).replace(/0+$/,"").replace(/\.$/,"")} нормы.`;
+  }
+  $("loadNote").textContent = shareText;
+
+  const okladPart = oklad * share;
+
+  // компенсационные
+  const cHarm = okladPart * num("harm") / 100;
+  // Проверка письменных работ начисляется пропорционально нагрузке,
+  // но не более чем за норму педагогической нагрузки (ПП РТ № 492)
+  const cTetr = isPed ? oklad * Math.min(share, 1) * num("tetr") / 100 : 0;
+  const cKlass = isPed ? num("klass") : 0;
+  const cOther = num("compOther");
+  // КС РФ 23.09.2024 № 40-П: работа вне основных обязанностей, выполняемая
+  // с письменного согласия, в МРОТ не засчитывается
+  const outside = isPed && $("outsideDuties").checked;
+  const compOut = outside ? cTetr + cKlass : 0;
+  const compIn = cHarm + cOther + (outside ? 0 : cTetr + cKlass);
+
+  // стимулирующие
+  const sQual = okladPart * num("qual") / 100;
+  const sStazh = okladPart * num("stazh") / 100;
+  const sPrem = num("premia");
+  const stim = sQual + sStazh + sPrem;
+
+  // база для МРОТ
+  const mrotBase = okladPart + compIn + stim;
+  const mrotReg = num("mrotReg");
+  const mrotThreshold = mrotReg * Math.min(share, 1);
+  const dopMrot = Math.max(0, mrotThreshold - mrotBase);
+
+  // часовые ставки
+  const hourlyOkl = nh > 0 ? okladPart / nh : 0;
+  const hourlyFull = nh > 0 ? (mrotBase + dopMrot + compOut) / nh : 0;
+
+  // сверх нормы
+  const ovrH = num("ovrH");
+  const ovrPay = hourlyFull * (Math.min(ovrH, 2) * 1.5 + Math.max(ovrH - 2, 0) * 2);
+  const nightH = num("nightH"), nightP = num("nightP");
+  const nightPay = hourlyOkl * nightH * nightP / 100;
+  const holH = num("holH"), holK = $("holMode").value === "over" ? 2 : 1;
+  const holPay = hourlyFull * holH * holK;
+  const sovm = num("sovm");
+
+  const beforeRk = mrotBase + dopMrot + compOut + ovrPay + nightPay + holPay + sovm;
+  const rk = num("rk"), sev = num("sev");
+  const highAlt = num("highAlt"), highAdd = $("highMode").value === "add";
+  const rkEff = (highAlt > 0 && !highAdd) ? Math.max(rk, 1 + highAlt / 100) : rk;
+  const rkPay = beforeRk * (rkEff - 1);
+  const highPay = (highAlt > 0 && highAdd) ? beforeRk * highAlt / 100 : 0;
+  const sevPay = beforeRk * sev / 100;
+  const nachislen = beforeRk + rkPay + highPay + sevPay;
+
+  // НДФЛ
+  const ytd = num("ytd");
+  const kids12 = Math.min(num("kids12"), 2), kids3 = num("kids3"), kidsInv = num("kidsInv");
+  let vych = 0;
+  if (kids12 >= 1) vych += 1400;
+  if (kids12 >= 2) vych += 2800;
+  vych += kids3 * 6000 + kidsInv * 12000;
+  const vychApplies = ytd + nachislen <= 450000;
+  const vychUse = vychApplies ? Math.min(vych, nachislen) : 0;
+  const tax = ndfl(Math.max(0, ytd + nachislen - vychUse)) - ndfl(ytd);
+  const uderzh = num("uderzh");
+  const naRuki = nachislen - Math.max(0, tax) - uderzh;
+
+  /* ---- ведомость ---- */
+  const L = $("salaryLines"); L.textContent = "";
+  line(L, isPed ? `Оклад за ${share.toFixed(2)} ставки` : "Оклад за отработанное время", okladPart);
+  if (cHarm) line(L, "За вредные условия", cHarm, "sub");
+  if (!outside && cTetr) line(L, "За проверку письменных работ", cTetr, "sub");
+  if (!outside && cKlass) line(L, "Классное руководство", cKlass, "sub");
+  if (cOther) line(L, "Иные компенсационные", cOther, "sub");
+  if (sQual) line(L, "За квалификационную категорию", sQual, "sub");
+  if (sStazh) line(L, "За стаж", sStazh, "sub");
+  if (sPrem) line(L, "Премия", sPrem, "sub");
+  if (dopMrot) line(L, "Доплата до МРОТ", dopMrot);
+  if (outside && cTetr) line(L, "За проверку письменных работ", cTetr);
+  if (outside && cKlass) line(L, "Классное руководство", cKlass);
+  if (ovrPay) line(L, `Сверхурочные (${hrs(ovrH)})`, ovrPay);
+  if (nightPay) line(L, `Ночные (${hrs(nightH)})`, nightPay);
+  if (holPay) line(L, `Выходные и праздники (${hrs(holH)})`, holPay);
+  if (sovm) line(L, "Совмещение", sovm);
+  if (rkPay) line(L, `Районный коэффициент ${rkEff.toLocaleString("ru-RU")}`, rkPay);
+  if (highPay) line(L, `Коэффициент за высокогорье ${highAlt} %`, highPay);
+  if (sevPay) line(L, `Северная надбавка ${sev} %`, sevPay);
+  line(L, "Начислено", nachislen, "total");
+  line(L, "НДФЛ", -Math.max(0, tax), "neg");
+  if (uderzh) line(L, "Прочие удержания", -uderzh, "neg");
+  line(L, "К выплате", naRuki, "total grand");
+
+  /* ---- сверка ---- */
+  const fN = num("factNach"), fP = num("factPay"), D = $("salaryDiff");
+  if (fN > 0 || fP > 0){
+    D.hidden = false;
+    const parts = [];
+    if (fN > 0){
+      const d = nachislen - fN;
+      parts.push(Math.abs(d) < 1
+        ? "Начислено сходится с расчётом."
+        : `Начислено в листке <strong>${money(fN)}</strong> — это на <strong>${money(Math.abs(d))}</strong> ${d > 0 ? "меньше" : "больше"} расчётного.`);
+    }
+    if (fP > 0){
+      const d = naRuki - fP;
+      parts.push(Math.abs(d) < 1
+        ? "К выплате сходится с расчётом."
+        : `К выплате в листке <strong>${money(fP)}</strong> — на <strong>${money(Math.abs(d))}</strong> ${d > 0 ? "меньше" : "больше"} расчётного.`);
+    }
+    const under = (fN > 0 && nachislen - fN > 1) || (fP > 0 && naRuki - fP > 1);
+    D.className = "diff " + (under ? "bad" : "ok");
+    D.innerHTML = parts.join(" ");
+  } else D.hidden = true;
+
+  /* ---- проверки ---- */
+  const C = $("salaryChecks"); C.textContent = "";
+  const h2 = document.createElement("h2"); h2.textContent = "Проверки"; C.append(h2);
+
+  // 1. МРОТ
+  if (share >= 0.999){
+    if (mrotBase + 0.01 < mrotReg)
+      check(C, dopMrot > 0 ? "warn" : "bad", "Зарплата за норму ниже МРОТ",
+        `Оклад со всеми входящими выплатами — <b>${money(mrotBase)}</b> при минимуме <b>${money(mrotReg)}</b>. Работодатель обязан доплатить <b>${money(dopMrot)}</b>. Проверьте, есть ли эта строка в листке.`,
+        "ст. 133 ТК РФ");
+    else
+      check(C, "ok", "МРОТ соблюдён",
+        `За полную норму начислено <b>${money(mrotBase)}</b> — это выше минимума <b>${money(mrotReg)}</b>.`, "ст. 133 ТК РФ");
+  } else {
+    check(C, "warn", "Неполная норма — гарантия пропорциональна",
+      `Отработано <b>${(share * 100).toFixed(1)} %</b> нормы, поэтому минимум для вас — <b>${money(mrotThreshold)}</b>, а не полный МРОТ.`,
+      "ст. 133 ТК РФ");
+  }
+
+  // 1б. Тува — гарантированный минимум с коэффициентом и надбавкой
+  if (isTyva){
+    const guarFull = mrotReg * (1 + (rkEff - 1) + sev / 100 + (highAdd ? highAlt / 100 : 0));
+    const guar = guarFull * Math.min(share, 1);
+    const [, nmReg] = regSel.value.split("|");
+    const months = num("northMonths");
+    check(C, nachislen + 0.01 >= guar ? "ok" : "bad", "Минимальная зарплата по Республике Тыва",
+      `${nmReg} — ${tyvaGrp.ks ? "район Крайнего Севера" : "приравненная местность"}. ` +
+      `Республиканское соглашение определяет минимум как МРОТ, увеличенный на районный коэффициент и процентную надбавку. Множители <b>складываются, а не перемножаются</b>: ` +
+      `<b>${money(mrotReg)}</b> × (1 + ${(rkEff - 1).toFixed(2).replace(".", ",")} + ${(sev / 100).toFixed(2).replace(".", ",")}` +
+      (highAdd && highAlt > 0 ? ` + ${(highAlt / 100).toFixed(2).replace(".", ",")}` : "") +
+      `) = <b>${money(guarFull)}</b> за полную норму` +
+      (share < 0.999 ? `, за вашу долю нормы — <b>${money(guar)}</b>` : "") +
+      `. Начислено <b>${money(nachislen)}</b>.`,
+      $("fedBudget").checked
+        ? "ст. 133 ТК РФ · КС РФ № 38-П · ст. 6 и 7 Закона РТ № 1054 ВХ-I"
+        : "п. 1.1 Регионального соглашения от 26.12.2023, действует по 31.12.2026");
+
+    check(C, "warn", $("fedBudget").checked ? "Соглашение к вам не применяется" : "Основание — региональное соглашение",
+      $("fedBudget").checked
+        ? `Организации, финансируемые из федерального бюджета, из-под соглашения выведены прямо (п. 5.2). Но коэффициент и надбавка вам всё равно причитаются сверх минимума — по ст. 315–317 ТК РФ, ст. 6 и 7 Закона РТ № 1054 ВХ-I и общеобязательному истолкованию из Постановления КС РФ № 38-П.`
+        : `Соглашение действует с 1 января 2024 года по 31 декабря 2026 года и распространяется на всех работодателей республики, кроме финансируемых из федерального бюджета. ` +
+          `Присоединение автоматическое: работодатель, не подавший мотивированный отказ в Министерство труда и социальной политики РТ в течение <b>30 календарных дней</b> со дня опубликования предложения, считается присоединившимся. ` +
+          `Та же формула «МРОТ плюс коэффициент плюс надбавка» действует в республике <b>с 1 января 2021 года</b> — предыдущими соглашениями.`,
+      "п. 4.1.1, 5.1 и 5.2 Соглашения · ст. 133.1 ТК РФ");
+
+    check(C, "warn", "Гарантия работает при полной норме",
+      `Пункт 1.4 соглашения даёт минимум при условии, что работник <b>полностью отработал норму рабочего времени и выполнил нормы труда</b>. ` +
+      (share >= 0.999
+        ? `Норма у вас отработана полностью — гарантия применяется в полном размере.`
+        : `У вас отработано <b>${(share * 100).toFixed(1)} %</b> нормы, поэтому минимум пересчитан пропорционально.`),
+      "п. 1.4 Соглашения");
+
+    if (sev < tyvaGrp.cap && months >= 60)
+      check(C, "warn", "Надбавка не достигла предела",
+        `При стаже <b>${months}</b> мес. начислено <b>${sev} %</b> из предельных <b>${tyvaGrp.cap} %</b>. ` +
+        `Проверьте, засчитан ли весь стаж работы в северных и приравненных местностях, включая прежних работодателей — он суммируется независимо от перерывов.`,
+        "ст. 314 ТК РФ, Закон РФ № 4520-1");
+
+    if (sev === 0)
+      check(C, "warn", "Надбавка ещё не начислена",
+        `Надбавка появляется ${tyvaGrp.ks ? "через 6 месяцев" : "после первого полного года"} работы в местности — или раньше по льготному порядку, если работнику нет 30 и он прожил здесь не менее года. Пока стажа меньше, отсутствие надбавки законно.`,
+        "ст. 317 ТК РФ");
+
+    check(C, "warn", "Систему оплаты труда смотреть в акте учреждения",
+      `Размеры надбавки взяты из ст. 7 Закона РТ № 1054 ВХ-I — она адресована работникам предприятий, учреждений и организаций, то есть любому работодателю. ` +
+      `А вот Постановление Правительства РТ № 492 регулирует систему оплаты труда только <b>государственных</b> образовательных организаций республики. ` +
+      `Муниципальные школы и детсады работают по актам органов местного самоуправления — оклады, проценты за категорию и проверку работ там свои.`,
+      "ст. 7 Закона РТ № 1054 ВХ-I · ПП РТ № 492");
+  }
+
+  // 1в. Постановление КС РФ от 23.09.2024 № 40-П
+  if (isPed && compOut > 0)
+    check(C, "warn", "Доплаты вне основных обязанностей — сверх МРОТ",
+      `Классное руководство и проверка письменных работ на <b>${money(compOut)}</b> выведены из базы МРОТ. ` +
+      `Это верно, если работа выполняется с <b>письменного согласия</b> и не входит в основные должностные обязанности по квалификационной характеристике. ` +
+      `Если согласия не было или работа входит в обязанности — снимите галочку, база пересчитается.`,
+      "Постановление КС РФ от 23.09.2024 № 40-П (дело Харюшевой)");
+  else if (isPed && (cTetr + cKlass) > 0)
+    check(C, "bad", "Доплаты засчитаны в МРОТ",
+      `Классное руководство и проверка работ на <b>${money(cTetr + cKlass)}</b> учтены внутри минимума. ` +
+      `Если эта работа выполняется с письменного согласия и не входит в основные обязанности по квалификационной характеристике, засчитывать её в МРОТ нельзя — расчётная разница составит эту сумму с коэффициентом и надбавкой.`,
+      "Постановление КС РФ от 23.09.2024 № 40-П");
+
+  // 2. что не должно поглощаться МРОТ
+  const excluded = ovrPay + nightPay + holPay + sovm + rkPay + highPay + sevPay;
+  if (excluded > 0)
+    check(C, "warn", "Эти суммы не должны входить в МРОТ",
+      `Сверхурочные, ночные, праздничные, совмещение, районный коэффициент и северная надбавка — всего <b>${money(excluded)}</b> — начисляются <b>сверх</b> минимума. Если в листке доплата до МРОТ уменьшена на эту сумму, это нарушение.`,
+      "КС РФ № 38-П, 17-П, 40-П");
+
+  // 3. сверхурочные
+  if (ovrH > 0){
+    const oldWay = hourlyOkl * (Math.min(ovrH,2)*1.5 + Math.max(ovrH-2,0)*2);
+    check(C, "warn", "Сверхурочные считаются от полной зарплаты",
+      `С 1 сентября 2024 года база — оклад <b>плюс</b> компенсационные и стимулирующие. По-новому: <b>${money(ovrPay)}</b>, по старому (от голого оклада): <b>${money(oldWay)}</b>. Разница — <b>${money(ovrPay - oldWay)}</b>.`,
+      "ст. 152 ТК РФ, ФЗ № 91-ФЗ от 22.04.2024");
+    if (ovrH > 120)
+      check(C, "bad", "Превышен годовой лимит переработки",
+        `Сверхурочная работа не может превышать 120 часов в год и 4 часа за два дня подряд.`, "ст. 99 ТК РФ");
+  }
+
+  // 4. ночные
+  if (nightH > 0)
+    check(C, nightP < 20 ? "bad" : "ok", nightP < 20 ? "Ночные ниже минимума" : "Ночные не ниже минимума",
+      nightP < 20
+        ? `Установлено <b>${nightP} %</b>, минимум — <b>20 %</b> часовой ставки за каждый ночной час. Расчётная разница: <b>${money(hourlyOkl*nightH*(20-nightP)/100)}</b>.`
+        : `Доплата <b>${nightP} %</b> за <b>${hrs(nightH)}</b> — <b>${money(nightPay)}</b>. Проверьте отраслевое соглашение: там процент часто выше.`,
+      "ст. 154 ТК РФ, ПП РФ № 554");
+
+  // 5. праздники
+  if (holH > 0)
+    check(C, "warn", "Оплата праздничных часов",
+      holK === 2
+        ? `Работа сверх нормы в праздник оплачивается <b>в двойном размере</b> — <b>${money(holPay)}</b> за ${hrs(holH)}.`
+        : `Работа в пределах нормы: сверх оклада доплачивается <b>одинарная</b> ставка — <b>${money(holPay)}</b>. Если вы <b>не брали</b> отгул, должна быть двойная.`,
+      "ст. 153 ТК РФ, КС РФ № 26-П");
+
+  // 6. совмещение
+  if (sovm > 0)
+    check(C, "warn", "Совмещение оплачивается отдельно",
+      `Доплата <b>${money(sovm)}</b> не может быть «спрятана» внутрь МРОТ и требует письменного соглашения с указанием размера и объёма работы.`,
+      "ст. 60.2 и 151 ТК РФ, КС РФ № 40-П");
+
+  // 7. РК на доплату до МРОТ
+  if (rkEff > 1 && dopMrot > 0)
+    check(C, "warn", "Районный коэффициент — на всю сумму",
+      `Коэффициент <b>${rkEff}</b> начисляется в том числе на доплату до МРОТ <b>${money(dopMrot)}</b>, то есть даёт ещё <b>${money(dopMrot*(rkEff-1))}</b>. Частая ошибка — начислить его только на оклад.`,
+      "КС РФ № 38-П");
+
+  // 7б. высокогорный коэффициент
+  if (highAlt > 0)
+    check(C, "warn", "Коэффициент за высокогорье — сверх МРОТ",
+      highAdd
+        ? `Начислено <b>${money(highPay)}</b> (<b>${highAlt} %</b>) дополнительно к районному коэффициенту. Это самостоятельная компенсационная выплата за особые условия, поэтому по логике постановлений КС РФ она в базу сравнения с МРОТ не входит и начисляется поверх минимума.`
+        : `Применён наибольший из двух коэффициентов — <b>${rkEff}</b>. Высокогорный <b>${highAlt} %</b> в этом варианте районный не дополняет, а замещает.`,
+      "ПП Правительства РТ от 20.09.2021 № 492");
+
+  // 8. структура зарплаты
+  const stimShare = nachislen > 0 ? stim / nachislen : 0;
+  if (stimShare > 0.4)
+    check(C, "warn", "Слишком большая доля стимулирующих",
+      `Премии и надбавки — <b>${(stimShare*100).toFixed(0)} %</b> заработка. Минтруд рекомендует держать гарантированную часть (оклад) не ниже 50–70 %: премию можно снять в любой месяц.`,
+      "Единые рекомендации РТК");
+  if (okladPart > 0 && okladPart < mrotReg * share * 0.5 && share > 0)
+    check(C, "warn", "Оклад ниже половины МРОТ",
+      `Оклад за отработанное время — <b>${money(okladPart)}</b>, это менее половины гарантии <b>${money(mrotThreshold)}</b>. Требуйте положение об оплате труда и проверьте отраслевые требования к минимальному окладу.`);
+
+  // 9. налоги
+  if (vych > 0 && !vychApplies)
+    check(C, "warn", "Вычет на детей больше не применяется",
+      `Доход с начала года превысил <b>450 000 ₽</b>, поэтому стандартный вычет <b>${money(vych)}</b> в этом месяце не действует.`,
+      "ст. 218 НК РФ");
+  else if (vych > 0)
+    check(C, "ok", "Вычет на детей учтён",
+      `Налоговая база уменьшена на <b>${money(vychUse)}</b>, экономия по НДФЛ — примерно <b>${money(vychUse*0.13)}</b>. Если в листке вычета нет — подайте заявление в бухгалтерию.`,
+      "ст. 218 НК РФ");
+  if (uderzh > nachislen * 0.5)
+    check(C, "bad", "Удержания больше половины зарплаты",
+      `Удерживают <b>${money(uderzh)}</b> из <b>${money(nachislen)}</b>. Общий предел — 20 %, по нескольким исполнительным листам — 50 %, и только по алиментам на детей и возмещению вреда — до 70 %.`,
+      "ст. 138 ТК РФ");
+
+  // 10. срок обращения в суд
+  const today = new Date();
+  const cut = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+  const fmt = d => d.toLocaleDateString("ru-RU", {day:"2-digit", month:"long", year:"numeric"});
+  check(C, "warn", "Срок обращения в суд — год по каждому месяцу",
+    `Срок считается отдельно для каждой выплаты, со дня, когда она должна была быть выплачена. На <b>${fmt(today)}</b> без восстановления срока взыскивается зарплата, срок выплаты которой наступил после <b>${fmt(cut)}</b>. Каждый прошедший месяц убирает из требования ещё один. Обращение в прокуратуру или инспекцию труда течение срока не приостанавливает.`,
+    "ст. 392 ТК РФ");
+
+  // 11. исторический период
+  if (mrotReg !== MROT)
+    check(C, "warn", "Расчёт за прошлый период",
+      `МРОТ взят по выбранному году — <b>${money(mrotReg)}</b>. Но норма рабочего времени подставляется из производственного календаря <b>2026</b> года. На проверку МРОТ это не влияет, а вот часовую ставку для сверхурочных и ночных за прошлые годы нужно пересчитать по календарю того года.`);
+}
+
+/* ---------- отпускные ---------- */
+function calcVac(){
+  const base = num("vBase"), full = Math.min(num("vFull"), 12);
+  const cal = num("vPartCal") || 30, worked = Math.min(num("vPartWorked"), cal);
+  const days = num("vDays"), rk = num("vRk");
+  const partCoef = full >= 12 ? 0 : (cal > 0 ? 29.3 / cal * worked : 0);
+  const divisor = 29.3 * full + partCoef;
+  const sdz = divisor > 0 ? base / divisor : 0;
+  const sdzMin = MROT / 29.3;
+  const sdzUse = Math.max(sdz, sdzMin);
+  const otp = sdzUse * days * rk;
+  const tax = otp * 0.13;
+
+  const L = $("vacLines"); L.textContent = "";
+  line(L, "База за расчётный период", base);
+  line(L, "Расчётное количество дней", divisor.toFixed(2).replace(".", ",") + " дн.");
+  if (full < 12) line(L, `Неполный месяц: ${worked} из ${cal} дней`, partCoef.toFixed(2).replace(".", ",") + " дн.", "sub");
+  line(L, "Средний дневной заработок", sdz);
+  line(L, "Минимум из МРОТ", sdzMin, "sub");
+  if (rk > 1) line(L, `Районный коэффициент ${rk.toLocaleString("ru-RU")}`, otp - sdzUse * days);
+  line(L, `Отпускные за ${days} дн.`, otp, "total");
+  line(L, "НДФЛ 13 %", -tax, "neg");
+  line(L, "К выплате", otp - tax, "total grand");
+
+  const fact = num("vFact"), D = $("vacDiff");
+  if (fact > 0){
+    D.hidden = false;
+    const d = otp - fact;
+    D.className = "diff " + (d > 1 ? "bad" : "ok");
+    D.innerHTML = Math.abs(d) < 1
+      ? "Начисленные отпускные сходятся с расчётом."
+      : `В листке <strong>${money(fact)}</strong> — на <strong>${money(Math.abs(d))}</strong> ${d > 0 ? "меньше" : "больше"} расчётного.`;
+  } else D.hidden = true;
+
+  const C = $("vacChecks"); C.textContent = "";
+  const h = document.createElement("h2"); h.textContent = "Проверки"; C.append(h);
+  check(C, sdz < sdzMin ? "bad" : "ok", sdz < sdzMin ? "Средний заработок ниже минимального" : "Средний заработок выше минимума",
+    sdz < sdzMin
+      ? `Расчётный СДЗ <b>${money(sdz)}</b> ниже минимума из МРОТ <b>${money(sdzMin)}</b>. Отпускные обязаны считать по минимуму.`
+      : `СДЗ <b>${money(sdz)}</b> при минимуме <b>${money(sdzMin)}</b>.`,
+    "п. 18 Положения № 922");
+  check(C, "warn", "Что должно входить в базу",
+    "Оклад, все компенсационные и стимулирующие выплаты, районный коэффициент, годовые премии за отработанный период. <b>Не входят</b>: прошлые отпускные, больничные, матпомощь, командировочные, оплата питания и проезда.",
+    "п. 2 и 5 Положения № 922");
+  check(C, "warn", "Срок выплаты",
+    "Отпускные выплачиваются <b>не позднее чем за 3 дня</b> до начала отпуска. За задержку положена компенсация — 1/150 ключевой ставки за каждый день.",
+    "ст. 136 и 236 ТК РФ");
+  if (days > 28)
+    check(C, "ok", "Удлинённый отпуск",
+      `У вас <b>${days}</b> календарных дней. Педагогам положено 42 или 56 дней, отдельным категориям — дополнительные дни за вредность и работу на Севере.`,
+      "ст. 334 ТК РФ, ПП РФ № 466");
+}
+
+/* ---------- больничный ---------- */
+function calcSick(){
+  const e24 = Math.min(num("s24"), BASE24), e25 = Math.min(num("s25"), BASE25);
+  const cut24 = num("s24") > BASE24, cut25 = num("s25") > BASE25;
+  const stazh = parseFloat($("sStazh").value), days = num("sDays"), rk = num("sRk");
+  const sdz = (e24 + e25) / 730;
+  const minDay = SICK_MIN_DAY * rk;
+  const belowMin = sdz < minDay, aboveMax = sdz > SICK_MAX_DAY;
+  const sdzUse = Math.min(Math.max(sdz, minDay), SICK_MAX_DAY);
+  const perDay = sdzUse * stazh;
+  const total = perDay * days;
+  const emp = perDay * Math.min(days, 3);
+  const sfr = total - emp;
+  const tax = total * 0.13;
+
+  const L = $("sickLines"); L.textContent = "";
+  line(L, "Заработок 2024 (в пределах базы)", e24);
+  line(L, "Заработок 2025 (в пределах базы)", e25);
+  line(L, "Средний дневной заработок", sdz);
+  line(L, "Минимум из МРОТ", minDay, "sub");
+  line(L, "Максимум по предельным базам", SICK_MAX_DAY, "sub");
+  line(L, `С учётом стажа (${Math.round(stazh*100)} %)`, perDay);
+  line(L, `Пособие за ${days} дн.`, total, "total");
+  line(L, "Из них платит работодатель (3 дня)", emp, "sub");
+  line(L, "Из них платит СФР", sfr, "sub");
+  line(L, "НДФЛ 13 %", -tax, "neg");
+  line(L, "К выплате", total - tax, "total grand");
+
+  const fact = num("sFact"), D = $("sickDiff");
+  if (fact > 0){
+    D.hidden = false;
+    const d = total - fact;
+    D.className = "diff " + (d > 1 ? "bad" : "ok");
+    D.innerHTML = Math.abs(d) < 1
+      ? "Пособие сходится с расчётом."
+      : `В листке <strong>${money(fact)}</strong> — на <strong>${money(Math.abs(d))}</strong> ${d > 0 ? "меньше" : "больше"} расчётного.`;
+  } else D.hidden = true;
+
+  const C = $("sickChecks"); C.textContent = "";
+  const h = document.createElement("h2"); h.textContent = "Проверки"; C.append(h);
+  if (belowMin)
+    check(C, "warn", "Пособие считается по МРОТ",
+      `Ваш фактический СДЗ <b>${money(sdz)}</b> ниже минимума <b>${money(minDay)}</b>, поэтому в расчёт берётся минимальный.`,
+      "ч. 6.1 ст. 14 Закона № 255-ФЗ");
+  else if (aboveMax)
+    check(C, "warn", "Достигнут потолок пособия",
+      `СДЗ <b>${money(sdz)}</b> выше максимума <b>${money(SICK_MAX_DAY)}</b> — заработок сверх предельных баз в пособии не учитывается.`,
+      "ч. 3.2 ст. 14 Закона № 255-ФЗ");
+  else
+    check(C, "ok", "Средний заработок в допустимых границах",
+      `СДЗ <b>${money(sdz)}</b> — между минимумом <b>${money(minDay)}</b> и максимумом <b>${money(SICK_MAX_DAY)}</b>.`);
+  if (cut24 || cut25)
+    check(C, "warn", "Заработок ограничен предельной базой",
+      `${cut24 ? "2024 год урезан до <b>2 225 000 ₽</b>. " : ""}${cut25 ? "2025 год урезан до <b>2 759 000 ₽</b>." : ""}`,
+      "ч. 3.2 ст. 14 Закона № 255-ФЗ");
+  check(C, "warn", "Можно заменить годы расчётного периода",
+    "Если в 2024–2025 годах вы были в отпуске по беременности или уходу за ребёнком, эти годы можно заменить более ранними — но только если пособие от этого вырастет. Нужно письменное заявление.",
+    "ч. 1 ст. 14 Закона № 255-ФЗ");
+  if (rk > 1)
+    check(C, "warn", "Районный коэффициент в больничном",
+      `Коэффициент <b>${rk}</b> применяется только к пособию, рассчитанному из МРОТ. На пособие из фактического заработка он не начисляется — он уже сидит внутри заработка.`,
+      "ч. 6.1 ст. 14 Закона № 255-ФЗ");
+}
+
+/* ---------- связывание ---------- */
+$("fSalary").addEventListener("input", calcSalary);
+$("fSalary").addEventListener("change", calcSalary);
+$("fVac").addEventListener("input", calcVac);
+$("fSick").addEventListener("input", calcSick);
+$("fSick").addEventListener("change", calcSick);
+
+$("year").addEventListener("change", () => { $("mrotReg").value = $("year").value; calcSalary(); });
+
+regSel.addEventListener("change", () => {
+  const nm = regSel.value.split("|")[1] || "";
+  $("highAlt").value = HIGH_ALT[nm] || 0;
+  calcSalary();
+});
+
+$("branch").addEventListener("change", () => {
+  const b = $("branch").value;
+  $("week").value = b === "med" ? "39" : b === "ped" ? "36" : "40";
+  calcSalary();
+});
+
+calcQuick(); calcSalary(); calcVac(); calcSick();
+</script>
+</body>
+</html>
